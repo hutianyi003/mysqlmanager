@@ -130,7 +130,7 @@ class Ui_studentmanagerClass(object):
     def retranslateUi(self, studentmanagerClass):
         _translate = QtCore.QCoreApplication.translate
         studentmanagerClass.setWindowTitle(_translate("studentmanagerClass", "学生成绩管理系统"))
-        self.statuslabel.setText(_translate("studentmanagerClass", "      已连接"))
+        self.statuslabel.setText(_translate("studentmanagerClass", "已连接"))
         self.refreshbutton.setToolTip(_translate("studentmanagerClass", "切换至数据库中的另一表格"))
         self.refreshbutton.setText(_translate("studentmanagerClass", "刷新"))
         self.savebutton.setToolTip(_translate("studentmanagerClass", "将当前更改保存至数据库"))
