@@ -32,8 +32,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         self.config["mysqlserver"] = {
             "host": "localhost",
             "port": 3306,
-            "password": "981012aA$",
-            "user": "root",
+            "password": "temppassword",
+            "user": "client",
             "database": "world"
         }
         self.oldtable["row"] = 0
