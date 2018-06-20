@@ -10,17 +10,22 @@ import mysql.connector
 
 class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
     def __init__(self, parent=None):
-        super().__init__()
+        super(studentmanager, self).__init__(parent)
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon("database.png"))
 
         self.statuslabel.setAlignment(QtCore.Qt.AlignCenter)
+
         self.savebutton.clicked.connect(self.saveresult)
         self.deletebutton.clicked.connect(self.deletetable)
+
         self.tableoption.currentIndexChanged.connect(self.tablechange)
+
         self.showtable.horizontalHeader().sectionClicked.connect(self.headerclick)
         self.showtable.itemClicked.connect(self.cursorClicked)
-        self.showtable.itemChanged.connect(self.tablechange)
+        self.showtable.itemChanged.connect(self.itemchange)
+
+        self.actionmysqlconfig.triggered.connect(self.setserver)
 
         self.config = dict()
         self.oldtable = dict()
@@ -49,13 +54,17 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
             self.excuteSql("DROP TABLE {}.{}")
         self.showTableOption()
 
-    def changetable(self):
-        exit()
+    def itemchange(self,index):
+        return
+
     
     def setserver(self):
-        config = self.config["mysqlserver"]
-        layout = QtWidgets.QFormLayout()
-        
+        inputdia = inputdialog(parent=self,currentconfig=self.config["mysqlserver"])
+        inputdia.show()
+        if inputdia.exec_() == QtWidgets.QDialog.Accepted:
+            self.config["mysqlserver"] = inputdia.getconfig()
+            self.connectMysql()
+            self.showTableOption()
 
     def cursorClicked(self, index):
         self.infolabel.setText("({2},{3}) ({0},{1})     ".format(
@@ -75,7 +84,7 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
             return result
 
     def headerclick(self, index):
-        self.showtable.sortItems(index,)
+        self.showtable.sortItems(index)
         return
     
     def statuschange(self, status):
@@ -89,13 +98,16 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
         if self.statuslabel.text() != "已连接":
             return
         result = self.excuteSql("SHOW TABLES")
+        self.tableoption.clear()
 
         if result is None or len(result) == 0:
             self.tableoption.clear()
             self.showtable.clear()
             return 
+        self.tableoption.blockSignals(True)
         for t in result:
             self.tableoption.insertItem(result.index(t),t[0])
+        self.tableoption.blockSignals(False)
 
         self.tablename = result[0][0]
         self.fetchtable()
@@ -149,6 +161,49 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
                 else:
                     item.setData(QtCore.Qt.EditRole,float(c))
                 table.setItem(i,j,item)
+
+class inputdialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, currentconfig=dict()):
+        super(inputdialog, self).__init__(parent, QtCore.Qt.WindowSystemMenuHint |
+                                          QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
+
+        self.setWindowTitle("服务器设置")
+
+        config = currentconfig
+        self.userhost = QtWidgets.QLineEdit(config["host"],self)
+        self.userport = QtWidgets.QLineEdit(str(config["port"]),self)
+        self.userpasswd = QtWidgets.QLineEdit(config["password"],self)
+        self.userpasswd.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.useruser = QtWidgets.QLineEdit(config["user"],self)
+        self.userdatabase = QtWidgets.QLineEdit(config["database"],self)
+
+
+        layout = QtWidgets.QFormLayout(self)
+        layout.addRow(QtWidgets.QLabel("Server:"))
+        layout.addRow("Host:",self.userhost)
+        layout.addRow("Port:",self.userport)
+        layout.addRow("User:",self.useruser)
+        layout.addRow("Password:",self.userpasswd)
+        layout.addRow("Database:",self.userdatabase)
+
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal, self)
+        
+        layout.addRow(buttonBox)
+
+        self.layout = layout
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def getconfig(self):
+        config = dict()
+        config["host"] = self.userhost.text()
+        config["user"] = self.useruser.text()
+        config["password"] = self.userpasswd.text()
+        config["port"] = self.userport.text()
+        config["database"] = self.userdatabase.text()
+        return config
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
