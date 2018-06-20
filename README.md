@@ -1,7 +1,7 @@
 # mysql manager
 A very simple visual mysql manager
 
-still working
+still building
 
 
 ## Environment：
@@ -13,3 +13,7 @@ mysql-connector-python
 PyQt5
 
 mysql server
+
+## Use:
+
+python(python3) studentmanager.py

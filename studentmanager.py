@@ -127,6 +127,19 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         else:
             self.statuschange("已连接")
 
+    def itemadaptor(self, c):
+        try:
+            int(c)
+        except:
+            try:
+                float(c)
+            except:
+                return c
+            else:
+                return float(c)
+        else:
+            return int(c)
+
     def fetchtable(self):
         if self.tablename == None or self.tablename == '':
             return
@@ -156,19 +169,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         self.showtable.blockSignals(True)
         for i in range(row):
             for j in range(col):
-                c = str(content[i][j])
                 item = QtWidgets.QTableWidgetItem()
-                try:
-                    float(c)
-                except:
-                    try:
-                        int(c)
-                    except:
-                        item.setData(QtCore.Qt.EditRole, c)
-                    else:
-                        item.setData(QtCore.Qt.EditRole, int(c))
-                else:
-                    item.setData(QtCore.Qt.EditRole, float(c))
+                item.setData(QtCore.Qt.EditRole, self.itemadaptor(content[i][j]))
                 table.setItem(i, j, item)
         self.showtable.blockSignals(False)
 
