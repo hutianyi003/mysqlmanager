@@ -1,14 +1,14 @@
 import sys
 
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5 import QtWidgets,QtCore,QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 from Ui_studentmanager import Ui_studentmanagerClass
 
 import mysql.connector
 
 
-class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
+class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
     def __init__(self, parent=None):
         super(studentmanager, self).__init__(parent)
         self.setupUi(self)
@@ -44,22 +44,26 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
         self.showTableOption()
 
     def saveresult(self):
-        reply = QMessageBox.information(self,"保存","是否确定将改动保存到数据库？",QMessageBox.Yes|QMessageBox.No)
+        reply = QMessageBox.information(
+            self, "保存", "是否确定将改动保存到数据库？", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.excuteSql("DROP TABLE {}.{}")
-    
+
     def deletetable(self):
-        reply = QMessageBox.warning(self,"警告","该操作会永久删除当前表格，是否继续？",QMessageBox.Yes|QMessageBox.No)
+        reply = QMessageBox.warning(
+            self, "警告", "该操作会永久删除当前表格，是否继续？", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.excuteSql("DROP TABLE {}.{}")
         self.showTableOption()
 
-    def itemchange(self,index):
-        return
+    def itemchange(self, item):
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
 
-    
     def setserver(self):
-        inputdia = inputdialog(parent=self,currentconfig=self.config["mysqlserver"])
+        inputdia = inputdialog(
+            parent=self, currentconfig=self.config["mysqlserver"])
         inputdia.show()
         if inputdia.exec_() == QtWidgets.QDialog.Accepted:
             self.config["mysqlserver"] = inputdia.getconfig()
@@ -76,7 +80,8 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
 
         try:
             cursor = self.conn.cursor()
-            cursor.execute(command.format(self.config["mysqlserver"]["database"],self.tablename))
+            cursor.execute(command.format(
+                self.config["mysqlserver"]["database"], self.tablename))
             result = cursor.fetchall()
         except:
             return None
@@ -86,7 +91,7 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
     def headerclick(self, index):
         self.showtable.sortItems(index)
         return
-    
+
     def statuschange(self, status):
         self.statuslabel.setText(status)
 
@@ -103,10 +108,10 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
         if result is None or len(result) == 0:
             self.tableoption.clear()
             self.showtable.clear()
-            return 
+            return
         self.tableoption.blockSignals(True)
         for t in result:
-            self.tableoption.insertItem(result.index(t),t[0])
+            self.tableoption.insertItem(result.index(t), t[0])
         self.tableoption.blockSignals(False)
 
         self.tablename = result[0][0]
@@ -115,12 +120,13 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
     def connectMysql(self):
         config = self.config["mysqlserver"]
         try:
-            self.conn = mysql.connector.connect(host=config["host"],port=config["port"],user=config["user"],password=config["password"],database=config["database"])
+            self.conn = mysql.connector.connect(
+                host=config["host"], port=config["port"], user=config["user"], password=config["password"], database=config["database"])
         except:
             self.statuschange("连接异常")
         else:
             self.statuschange("已连接")
-        
+
     def fetchtable(self):
         if self.tablename == None or self.tablename == '':
             return
@@ -132,11 +138,13 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
         col = len(result)
         col_label = [x[0] for x in result]
 
-        cursor.execute("SELECT COUNT(*) FROM {}.{}".format(self.config["mysqlserver"]["database"],self.tablename))
+        cursor.execute("SELECT COUNT(*) FROM {}.{}".format(
+            self.config["mysqlserver"]["database"], self.tablename))
         result = cursor.fetchall()
         row = result[0][0]
 
-        cursor.execute("SELECT * FROM {}.{}".format(self.config["mysqlserver"]["database"],self.tablename))
+        cursor.execute(
+            "SELECT * FROM {}.{}".format(self.config["mysqlserver"]["database"], self.tablename))
         content = cursor.fetchall()
 
         table = self.showtable
@@ -145,6 +153,7 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
         table.setHorizontalHeaderLabels(col_label)
 
         self.oldtable["row"] = row
+        self.showtable.blockSignals(True)
         for i in range(row):
             for j in range(col):
                 c = str(content[i][j])
@@ -155,12 +164,14 @@ class studentmanager(QtWidgets.QMainWindow,Ui_studentmanagerClass):
                     try:
                         int(c)
                     except:
-                        item.setData(QtCore.Qt.EditRole,c)
+                        item.setData(QtCore.Qt.EditRole, c)
                     else:
-                        item.setData(QtCore.Qt.EditRole,int(c))
+                        item.setData(QtCore.Qt.EditRole, int(c))
                 else:
-                    item.setData(QtCore.Qt.EditRole,float(c))
-                table.setItem(i,j,item)
+                    item.setData(QtCore.Qt.EditRole, float(c))
+                table.setItem(i, j, item)
+        self.showtable.blockSignals(False)
+
 
 class inputdialog(QtWidgets.QDialog):
     def __init__(self, parent=None, currentconfig=dict()):
@@ -170,25 +181,24 @@ class inputdialog(QtWidgets.QDialog):
         self.setWindowTitle("服务器设置")
 
         config = currentconfig
-        self.userhost = QtWidgets.QLineEdit(config["host"],self)
-        self.userport = QtWidgets.QLineEdit(str(config["port"]),self)
-        self.userpasswd = QtWidgets.QLineEdit(config["password"],self)
+        self.userhost = QtWidgets.QLineEdit(config["host"], self)
+        self.userport = QtWidgets.QLineEdit(str(config["port"]), self)
+        self.userpasswd = QtWidgets.QLineEdit(config["password"], self)
         self.userpasswd.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.useruser = QtWidgets.QLineEdit(config["user"],self)
-        self.userdatabase = QtWidgets.QLineEdit(config["database"],self)
-
+        self.useruser = QtWidgets.QLineEdit(config["user"], self)
+        self.userdatabase = QtWidgets.QLineEdit(config["database"], self)
 
         layout = QtWidgets.QFormLayout(self)
         layout.addRow(QtWidgets.QLabel("Server:"))
-        layout.addRow("Host:",self.userhost)
-        layout.addRow("Port:",self.userport)
-        layout.addRow("User:",self.useruser)
-        layout.addRow("Password:",self.userpasswd)
-        layout.addRow("Database:",self.userdatabase)
+        layout.addRow("Host:", self.userhost)
+        layout.addRow("Port:", self.userport)
+        layout.addRow("User:", self.useruser)
+        layout.addRow("Password:", self.userpasswd)
+        layout.addRow("Database:", self.userdatabase)
 
         buttonBox = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal, self)
-        
+
         layout.addRow(buttonBox)
 
         self.layout = layout
@@ -204,6 +214,7 @@ class inputdialog(QtWidgets.QDialog):
         config["port"] = self.userport.text()
         config["database"] = self.userdatabase.text()
         return config
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
