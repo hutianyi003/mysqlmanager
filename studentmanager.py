@@ -1,5 +1,6 @@
 import sys
 import csv
+import statistics
 
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -8,6 +9,19 @@ from Ui_studentmanager import Ui_studentmanagerClass
 
 import mysql.connector
 
+
+def itemadaptor(c):
+    try:
+        int(c)
+    except:
+        try:
+            float(c)
+        except:
+            return c
+        else:
+            return float(c)
+    else:
+        return int(c)
 
 class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
     def __init__(self, parent=None):
@@ -19,6 +33,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
 
         self.savebutton.clicked.connect(self.saveresult)
         self.findbutton.clicked.connect(self.userQuery)
+        self.staticbutton.clicked.connect(self.userStatic)
         #self.deletebutton.clicked.connect(self.deletetable)
 
         self.actionexport.triggered.connect(self.outcsv)
@@ -48,14 +63,19 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         self.connectMysql()
         self.showTableOption()
 
+    def userStatic(self):
+        dialog = staticDialog(self.oldtable,self.oldtable["header"],self)
+        dialog.show()
+        dialog.exec_()
+
     def userQuery(self):
         dialog = queryDialog(self,self.oldtable["header"])
         dialog.show()
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             query = dialog.getquery()
             name = query["name"]
-            left = self.itemadaptor(query["min"])
-            right = self.itemadaptor(query["max"])
+            left = itemadaptor(query["min"])
+            right = itemadaptor(query["max"])
             result = self.excuteSql("SELECT * FROM {{}}.{{}} WHERE {0} >= {1} AND {0} <= {2}".format(name,left,right))
             if result is None or len(result) == 0:
                 QtWidgets.QMessageBox.information(self,"提示","无查询结果",QtWidgets.QMessageBox.Ok)
@@ -68,10 +88,9 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
             for i in range(row):
                 for j in range(col):
                     item = QtWidgets.QTableWidgetItem()
-                    item.setData(QtCore.Qt.EditRole, self.itemadaptor(result[i][j]))
+                    item.setData(QtCore.Qt.EditRole, itemadaptor(result[i][j]))
                     table.setItem(i, j, item)
             table.blockSignals(False)
-            print(result)
 
         return
 
@@ -245,18 +264,6 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         else:
             self.statuschange("已连接")
 
-    def itemadaptor(self, c):
-        try:
-            int(c)
-        except:
-            try:
-                float(c)
-            except:
-                return c
-            else:
-                return float(c)
-        else:
-            return int(c)
 
     def fetchtable(self):
         if self.tablename == None or self.tablename == '':
@@ -289,7 +296,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         for i in range(row):
             for j in range(col):
                 item = QtWidgets.QTableWidgetItem()
-                item.setData(QtCore.Qt.EditRole, self.itemadaptor(content[i][j]))
+                item.setData(QtCore.Qt.EditRole, itemadaptor(content[i][j]))
                 table.setItem(i, j, item)
         self.showtable.blockSignals(False)
         self.tablechanged = False
@@ -370,6 +377,55 @@ class queryDialog(QtWidgets.QDialog):
         query["min"] = self.usermin.text()
         query["max"] = self.usermax.text()
         return query
+
+class staticDialog(QtWidgets.QDialog):
+    def __init__(self, table, namelist=[], parent=None):
+        super(staticDialog, self).__init__(parent, QtCore.Qt.WindowSystemMenuHint |
+                                          QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
+
+        self.setWindowTitle("统计")
+
+        self.username = QtWidgets.QComboBox(self)
+        self.usermin = QtWidgets.QLabel('0', self)
+        self.usermax = QtWidgets.QLabel('0', self)
+        self.userave = QtWidgets.QLabel('0', self)
+        self.usermid = QtWidgets.QLabel('0', self)
+        self.userdelta = QtWidgets.QLabel('0', self)
+
+        self.username.addItems(namelist)
+        layout = QtWidgets.QFormLayout(self)
+        layout.addRow("选择统计列:", self.username)
+        layout.addRow("最小值:", self.usermin)
+        layout.addRow("最大值:", self.usermax)
+        layout.addRow("平均值:", self.userave)
+        layout.addRow("中位数:", self.usermid)
+        layout.addRow("标准差:", self.userdelta)
+
+        self.table = table
+        self.namelist = namelist
+
+        self.username.currentTextChanged.connect(self.switch)
+        self.switch(self.username.currentText())
+
+
+    def switch(self, text):
+        index = self.namelist.index(text)
+        itemtype = str(self.table["desc"][index][1])
+        if 'int' not in itemtype and 'float' not in itemtype:
+            l = [self.usermax,self.usermin,self.userave,self.userdelta,self.usermid]
+            for i in l:
+                i.clear()
+            return
+        row = self.table["row"]
+        data = []
+        content = self.table["content"]
+        for i in range(row):
+            data.append(itemadaptor(content[i][index]))
+        self.usermax.setText(str(max(data)))
+        self.usermin.setText(str(min(data)))
+        self.userave.setText(str(statistics.mean(data)))
+        self.usermid.setText(str(statistics.median(data)))
+        self.userdelta.setText(str(statistics.pstdev(data)))
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
