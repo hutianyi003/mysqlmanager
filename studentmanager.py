@@ -50,7 +50,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         reply = QMessageBox.information(
             self, "保存", "是否确定将改动保存到数据库？", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.excuteSql("DROP TABLE {}.{}")
+            #self.excuteSql("DROP TABLE {}.{}")
+            return
 
     def deletetable(self):
         reply = QMessageBox.warning(
@@ -74,6 +75,9 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         font = item.font()
         font.setBold(True)
         item.setFont(font)
+        if item.row() == self.showtable.rowCount()-1:
+            self.showtable.insertRow(self.showtable.rowCount())
+        self.tablechanged = True
 
     def setserver(self):
         inputdia = inputdialog(
@@ -103,8 +107,10 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
             return result
 
     def headerclick(self, index):
+        if self.tablechanged:
+            QtWidgets.QMessageBox.information(self,"无法排序","更改过的表格无法进行排序,请先保存更改")
+            return
         self.showtable.sortItems(index)
-        return
 
     def statuschange(self, status):
         self.statuslabel.setText(status)
@@ -189,6 +195,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
                 item.setData(QtCore.Qt.EditRole, self.itemadaptor(content[i][j]))
                 table.setItem(i, j, item)
         self.showtable.blockSignals(False)
+        self.tablechanged = False
 
 
 class inputdialog(QtWidgets.QDialog):
