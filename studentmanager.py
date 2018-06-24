@@ -41,6 +41,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         }
         self.oldtable["row"] = 0
         self.oldtable["change"] = []
+        self.oldtable['changeditmes'] = []
         self.tablename = ''
 
         self.connectMysql()
@@ -50,8 +51,15 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         reply = QMessageBox.information(
             self, "保存", "是否确定将改动保存到数据库？", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            #self.excuteSql("DROP TABLE {}.{}")
-            return
+            desc = self.oldtable['desc']
+            pri = None
+            for row in desc:
+                if row[3] == b'PRI':
+                    pri = str(row[0])
+            if pri is None:
+                QtWidgets.QMessageBox.critical(self,"错误","该表格没有主键,请联系数据库管理员!",QtWidgets.QMessageBox.Ok)
+                return
+            print(pri)
 
     def deletetable(self):
         reply = QMessageBox.warning(
@@ -75,6 +83,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         font = item.font()
         font.setBold(True)
         item.setFont(font)
+        self.oldtable['changeditmes'].append((item.row(),item.column()))
         if item.row() == self.showtable.rowCount()-1:
             self.showtable.insertRow(self.showtable.rowCount())
         self.tablechanged = True
@@ -163,22 +172,16 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
     def fetchtable(self):
         if self.tablename == None or self.tablename == '':
             return
-        cursor = self.conn.cursor()
 
-        cursor.execute("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'".format(
-            self.config["mysqlserver"]["database"], self.tablename))
-        result = cursor.fetchall()
-        col = len(result)
-        col_label = [x[0] for x in result]
-
-        cursor.execute("SELECT COUNT(*) FROM {}.{}".format(
-            self.config["mysqlserver"]["database"], self.tablename))
-        result = cursor.fetchall()
+        result = self.excuteSql("SELECT COUNT(*) FROM {}.{}")
         row = result[0][0]
 
-        cursor.execute(
-            "SELECT * FROM {}.{}".format(self.config["mysqlserver"]["database"], self.tablename))
-        content = cursor.fetchall()
+        content = self.excuteSql("SELECT * FROM {}.{}")
+
+        desc = self.excuteSql("DESC {}.{}")
+        col = len(desc)
+        col_label = [x[0] for x in desc]
+        self.oldtable['desc'] = desc
 
         table = self.showtable
         table.setRowCount(row+1)
