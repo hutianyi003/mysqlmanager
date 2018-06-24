@@ -76,7 +76,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>在数据库中删除当前表格</string>
+         <string>计算统计量</string>
         </property>
         <property name="text">
          <string>统计</string>
@@ -98,7 +98,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>切换至数据库中的另一表格</string>
+         <string>查找一定范围的数据</string>
         </property>
         <property name="text">
          <string>查询</string>
@@ -169,36 +169,18 @@
     <property name="toolTipsVisible">
      <bool>true</bool>
     </property>
+    <addaction name="actionrefesh"/>
     <addaction name="actionmysqlconfig"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_3"/>
   </widget>
-  <action name="actionnewtable">
-   <property name="text">
-    <string>新建表格</string>
-   </property>
-   <property name="toolTip">
-    <string>在数据库中新建一张表格</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
-   </property>
-  </action>
   <action name="actionmysqlconfig">
    <property name="text">
     <string>设置连接</string>
    </property>
    <property name="toolTip">
     <string>设置MySql数据库的连接</string>
-   </property>
-  </action>
-  <action name="actionstatic">
-   <property name="text">
-    <string>统计</string>
-   </property>
-   <property name="toolTip">
-    <string>进行统计计算</string>
    </property>
   </action>
   <action name="actionexport">
@@ -214,7 +196,7 @@
     <string>退出</string>
    </property>
   </action>
-  <action name="actionrefresh">
+  <action name="actionrefesh">
    <property name="text">
     <string>刷新</string>
    </property>

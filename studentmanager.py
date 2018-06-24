@@ -18,17 +18,21 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         self.statuslabel.setAlignment(QtCore.Qt.AlignCenter)
 
         self.savebutton.clicked.connect(self.saveresult)
+        self.findbutton.clicked.connect(self.userQuery)
         #self.deletebutton.clicked.connect(self.deletetable)
 
         self.actionexport.triggered.connect(self.outcsv)
+        self.actionexit.triggered.connect(self.close)
+        self.actionmysqlconfig.triggered.connect(self.setserver)
+        self.actionrefesh.triggered.connect(self.fetchtable)
 
         self.tableoption.currentIndexChanged.connect(self.tablechange)
 
         self.showtable.horizontalHeader().sectionClicked.connect(self.headerclick)
+        self.showtable.horizontalHeader().sectionDoubleClicked.connect(self.headerDoubleClick)
         self.showtable.itemClicked.connect(self.cursorClicked)
         self.showtable.itemChanged.connect(self.itemchange)
 
-        self.actionmysqlconfig.triggered.connect(self.setserver)
 
         self.config = dict()
         self.oldtable = dict()
@@ -43,6 +47,33 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
 
         self.connectMysql()
         self.showTableOption()
+
+    def userQuery(self):
+        dialog = queryDialog(self,self.oldtable["header"])
+        dialog.show()
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            query = dialog.getquery()
+            name = query["name"]
+            left = self.itemadaptor(query["min"])
+            right = self.itemadaptor(query["max"])
+            result = self.excuteSql("SELECT * FROM {{}}.{{}} WHERE {0} >= {1} AND {0} <= {2}".format(name,left,right))
+            if result is None or len(result) == 0:
+                QtWidgets.QMessageBox.information(self,"提示","无查询结果",QtWidgets.QMessageBox.Ok)
+                return
+            table = self.showtable
+            table.blockSignals(True)
+            table.clear()
+            row = len(result)
+            col = self.oldtable["col"]
+            for i in range(row):
+                for j in range(col):
+                    item = QtWidgets.QTableWidgetItem()
+                    item.setData(QtCore.Qt.EditRole, self.itemadaptor(result[i][j]))
+                    table.setItem(i, j, item)
+            table.blockSignals(False)
+            print(result)
+
+        return
 
     def saveresult(self):
         reply = QMessageBox.information(
@@ -171,6 +202,12 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
             return
         self.showtable.sortItems(index)
 
+    def headerDoubleClick(self, index):
+        if self.tablechanged:
+            QtWidgets.QMessageBox.information(self,"无法排序","更改过的表格无法进行排序,请先保存更改")
+            return
+        self.showtable.sortItems(index,QtCore.Qt.DescendingOrder)
+
     def statuschange(self, status):
         self.statuslabel.setText(status)
 
@@ -245,6 +282,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         table.setHorizontalHeaderLabels(col_label)
 
         self.oldtable["row"] = row
+        self.oldtable["col"] = len(col_label)
         self.oldtable["content"] = content
         self.oldtable["header"] = col_label
         self.showtable.blockSignals(True)
@@ -299,6 +337,39 @@ class inputdialog(QtWidgets.QDialog):
         config["database"] = self.userdatabase.text()
         return config
 
+class queryDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, namelist = []):
+        super(queryDialog, self).__init__(parent, QtCore.Qt.WindowSystemMenuHint |
+                                          QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
+
+        self.setWindowTitle("查询")
+
+        self.username = QtWidgets.QComboBox(self)
+        self.usermin = QtWidgets.QLineEdit('0', self)
+        self.usermax = QtWidgets.QLineEdit('0', self)
+
+        self.username.addItems(namelist)
+        layout = QtWidgets.QFormLayout(self)
+        layout.addRow("列名称:", self.username)
+        layout.addRow("最小值:", self.usermin)
+        layout.addRow("最大值:", self.usermax)
+
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal, self)
+
+        layout.addRow(buttonBox)
+
+        self.layout = layout
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def getquery(self):
+        query = dict()
+        query["name"] = self.username.currentText()
+        query["min"] = self.usermin.text()
+        query["max"] = self.usermax.text()
+        return query
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
