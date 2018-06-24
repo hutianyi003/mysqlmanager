@@ -1,4 +1,5 @@
 import sys
+import csv
 
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -18,6 +19,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
 
         self.savebutton.clicked.connect(self.saveresult)
         self.deletebutton.clicked.connect(self.deletetable)
+
+        self.actionexport.triggered.connect(self.outcsv)
 
         self.tableoption.currentIndexChanged.connect(self.tablechange)
 
@@ -55,6 +58,17 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         if reply == QMessageBox.Yes:
             self.excuteSql("DROP TABLE {}.{}")
         self.showTableOption()
+    
+    def outcsv(self):
+        if self.showtable.columnCount() == 0 or self.showtable.rowCount()== 0:
+            QtWidgets.QMessageBox.critical(self,"错误","当前表格无法导出",QtWidgets.QMessageBox.Ok)
+        file = str(QtWidgets.QFileDialog.getExistingDirectory(self, "选择保存路径"))
+        name = self.tablename+'.csv'
+        print(file,name)
+        with open(file + '/' + name,'w',newline = '',encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(self.oldtable["header"])
+            writer.writerows(self.oldtable["content"])
 
     def itemchange(self, item):
         font = item.font()
@@ -166,6 +180,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         table.setHorizontalHeaderLabels(col_label)
 
         self.oldtable["row"] = row
+        self.oldtable["content"] = content
+        self.oldtable["header"] = col_label
         self.showtable.blockSignals(True)
         for i in range(row):
             for j in range(col):
