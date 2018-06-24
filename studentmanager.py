@@ -18,7 +18,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         self.statuslabel.setAlignment(QtCore.Qt.AlignCenter)
 
         self.savebutton.clicked.connect(self.saveresult)
-        self.deletebutton.clicked.connect(self.deletetable)
+        #self.deletebutton.clicked.connect(self.deletetable)
 
         self.actionexport.triggered.connect(self.outcsv)
 
@@ -37,11 +37,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
             "port": 3306,
             "password": "temppassword",
             "user": "client",
-            "database": "world"
+            "database": "test"
         }
-        self.oldtable["row"] = 0
-        self.oldtable["change"] = []
-        self.oldtable['changeditmes'] = []
         self.tablename = ''
 
         self.connectMysql()
@@ -59,7 +56,60 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
             if pri is None:
                 QtWidgets.QMessageBox.critical(self,"错误","该表格没有主键,请联系数据库管理员!",QtWidgets.QMessageBox.Ok)
                 return
-            print(pri)
+            label = self.oldtable["header"]
+            col = len(label)
+            desc = self.oldtable["desc"]
+
+            pri = str(pri)
+            pri_order = label.index(pri)
+
+            if self.oldtable["row"] < self.showtable.rowCount()-1:
+                header = "("
+                for i in range(col):
+                    header+=label[i]
+                    if i != col - 1:
+                        header+=','
+                header += ")"
+                for i in range(self.oldtable["row"], self.showtable.rowCount()-1):
+                    value = "("
+                    for j in range(col):
+                        item = self.showtable.item(i, j)
+                        if item is None:
+                            value += "null"
+                        else:
+                            itemtype = str(desc[j][1])
+                            if "char" in itemtype or "CHAR" in itemtype:
+                                value+="'{}'".format(item.text())
+                            else:
+                                value += item.text()
+                        if j != col - 1:
+                            value+=','
+                    value += ")"
+                    self.excuteSql("INSERT INTO {}.{} " + header + " VALUES" + value)
+            for c in self.oldtable["change"]:
+                i = c[0]
+                j = c[1]
+                item = self.showtable.item(i, j)
+                if item is None:
+                    continue
+                else:
+                    itemtype = str(desc[j][1])
+                    if "char" in itemtype or "CHAR" in itemtype:
+                        info ="'{}'".format(item.text())
+                    else:
+                        info = item.text()
+                    colname = label[j]
+                    priinfo = self.showtable.item(i,pri_order).text()
+                    
+                self.excuteSql("UPDATE {}.{} SET " +colname+"="+info+" WHERE "+pri+"="+priinfo)
+                '''
+                if self.excuteSql("UPDATE {}.{} SET " +colname+"="+info+" WHERE "+pri+"="+priinfo) is None:
+                    self.conn.rollback()
+                    QtWidgets.QMessageBox.critical(self,"错误","非法修改({},{})".format(i,j),QtWidgets.QMessageBox.Ok)
+                    return
+                '''
+            self.conn.commit()
+            self.fetchtable()
 
     def deletetable(self):
         reply = QMessageBox.warning(
@@ -83,7 +133,7 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
         font = item.font()
         font.setBold(True)
         item.setFont(font)
-        self.oldtable['changeditmes'].append((item.row(),item.column()))
+        self.oldtable['change'].append((item.row(),item.column()))
         if item.row() == self.showtable.rowCount()-1:
             self.showtable.insertRow(self.showtable.rowCount())
         self.tablechanged = True
@@ -130,6 +180,8 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
 
     def showTableOption(self):
         if self.statuslabel.text() != "已连接":
+            self.tableoption.clear()
+            self.showtable.clear()
             return
         result = self.excuteSql("SHOW TABLES")
         self.tableoption.clear()
@@ -172,6 +224,10 @@ class studentmanager(QtWidgets.QMainWindow, Ui_studentmanagerClass):
     def fetchtable(self):
         if self.tablename == None or self.tablename == '':
             return
+
+        self.oldtable["row"] = 0
+        self.oldtable["change"] = []
+        self.showtable.clear()
 
         result = self.excuteSql("SELECT COUNT(*) FROM {}.{}")
         row = result[0][0]

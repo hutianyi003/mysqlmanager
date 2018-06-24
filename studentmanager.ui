@@ -62,7 +62,29 @@
     <item row="1" column="1">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QPushButton" name="refreshbutton">
+       <widget class="QPushButton" name="staticbutton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>等线</family>
+          <pointsize>18</pointsize>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>在数据库中删除当前表格</string>
+        </property>
+        <property name="text">
+         <string>统计</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="findbutton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -79,7 +101,7 @@
          <string>切换至数据库中的另一表格</string>
         </property>
         <property name="text">
-         <string>条件查询</string>
+         <string>查询</string>
         </property>
        </widget>
       </item>
@@ -102,28 +124,6 @@
         </property>
         <property name="text">
          <string>保存更改</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="deletebutton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <family>等线</family>
-          <pointsize>18</pointsize>
-         </font>
-        </property>
-        <property name="toolTip">
-         <string>在数据库中删除当前表格</string>
-        </property>
-        <property name="text">
-         <string>删除表格</string>
         </property>
        </widget>
       </item>
@@ -159,7 +159,6 @@
     <property name="toolTipsVisible">
      <bool>true</bool>
     </property>
-    <addaction name="actionnewtable"/>
     <addaction name="actionexport"/>
     <addaction name="actionexit"/>
    </widget>
@@ -208,9 +207,6 @@
    </property>
    <property name="toolTip">
     <string>将当前表格导出为csv文件</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionexit">
